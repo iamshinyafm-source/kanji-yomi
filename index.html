@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>漢字よみ道場</title>
+<meta name="theme-color" content="#1f3a5f">
+<meta name="description" content="漢字検定（4級〜1級）と大人の難読漢字の読みを4択で学ぶアプリ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="漢字よみ道場">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 落ち着いた学習帳。集中できる静けさと、正解時の小さなご褒美
+   IDEA: 漢字練習帳のマス目と、先生の朱色の花まる
+   PICTURE: マス目に書かれた出題語そのもの。正解で朱の丸が描かれる
+   COLOUR and TYPE: 藍の帯・白い紙・朱のアクセント / Zen Old Mincho + Zen Kaku Gothic New
+   LAYOUT: 上に設定帯、中央に問題カード、下に苦手リスト。スマホは縦一列 */
+:root{color-scheme:light dark;
+--bg:light-dark(#f3f5f8,#0d1622);--paper:light-dark(#ffffff,#152233);--ink:light-dark(#18202b,#e9eef5);
+--sub:light-dark(#5a6575,#9fb0c4);--line:light-dark(#d5dce6,#2a3b52);--ai:light-dark(#1f3a5f,#0a1320);
+--ai-ink:#f2f5fa;--shu:light-dark(#e0392b,#ff6a55);--ok:light-dark(#1f7a4d,#5fd39a);--soft:light-dark(#eef2f7,#1b2b40)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Zen Kaku Gothic New",system-ui,sans-serif;overflow-x:clip}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--shu);outline-offset:2px}
+.band{padding:clamp(20px,3vw,36px) max(5vw,16px)}
+.top{background:var(--ai);color:var(--ai-ink)}
+.wrap{max-width:860px;margin:0 auto}
+h1{font:900 clamp(28px,5vw,40px)/1.05 "Zen Old Mincho",serif;margin:0 0 14px;letter-spacing:.04em}
+.row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.lbl{font-size:13px;opacity:.8;margin-inline-end:4px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--ai-ink)}
+.seg button[aria-pressed=true]{background:var(--ai-ink);color:#1f3a5f;border-color:var(--ai-ink);font-weight:700}
+.top select{min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--ai-ink);font-size:16px}
+.top select option{color:#18202b}
+.go{min-height:44px;padding:0 22px;border-radius:22px;border:0;background:var(--shu);color:#fff;font-weight:700}
+.levels{margin-top:12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,32px);box-shadow:0 10px 30px -18px rgba(20,40,70,.35)}
+.meta{display:flex;justify-content:space-between;gap:12px;color:var(--sub);font-size:14px;margin-bottom:6px}
+.bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin-bottom:22px}
+.bar i{display:block;height:100%;background:var(--ai-ink);background:var(--shu);transition:width .3s}
+.stage{position:relative;display:flex;justify-content:center;padding:8px 0 18px}
+.cells{display:flex;flex-wrap:wrap;justify-content:center;gap:0;border:2px solid var(--ink)}
+.cell{--s:clamp(54px,15vw,96px);width:var(--s);height:var(--s);display:grid;place-items:center;position:relative;
+font:900 calc(var(--s)*.68)/1 "Zen Old Mincho",serif;border-inline-start:1px solid var(--line)}
+.cell:first-child{border-inline-start:0}
+.cell::before,.cell::after{content:"";position:absolute;border:0 dashed var(--line);pointer-events:none}
+.cell::before{left:50%;top:0;bottom:0;border-left-width:1px}
+.cell::after{top:50%;left:0;right:0;border-top-width:1px}
+.cell span{position:relative;z-index:1}
+.maru{position:absolute;inset:-10px -18px;pointer-events:none;z-index:2;overflow:visible}
+.maru ellipse{fill:none;stroke:var(--shu);stroke-width:5;stroke-linecap:round;opacity:.85;stroke-dasharray:1000;stroke-dashoffset:1000}
+.maru.on ellipse{animation:draw .7s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.maru.on ellipse{animation:none;stroke-dashoffset:0}.bar i{transition:none}}
+.q{text-align:center;color:var(--sub);margin:0 0 14px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opt{min-height:56px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);font-size:18px;text-align:start;display:flex;gap:10px;align-items:center}
+.opt b{flex:none;width:26px;height:26px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-size:13px;color:var(--sub)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--paper))}
+.opt.wrong{border-color:var(--shu);background:color-mix(in srgb,var(--shu) 10%,var(--paper))}
+.opt:disabled{cursor:default}
+.fb{margin-top:18px;padding:16px;border-radius:12px;background:var(--soft);display:none}
+.fb.show{display:block}
+.fb .head{font-weight:700;font-size:18px;margin-bottom:6px}
+.fb .head.ok{color:var(--ok)}.fb .head.ng{color:var(--shu)}
+.rb{font:600 30px/1.9 "Zen Old Mincho",serif}
+.rb rt{font:500 14px "Zen Kaku Gothic New",sans-serif;color:var(--shu)}
+.mean{color:var(--sub);margin:4px 0 12px}
+.acts{display:flex;flex-wrap:wrap;gap:10px}
+.btn{min-height:44px;padding:0 18px;border-radius:22px;border:1.5px solid var(--line);background:var(--paper);display:inline-flex;align-items:center;gap:8px}
+.btn.main{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
+.btn svg{width:18px;height:18px}
+.res{text-align:center}
+.res .big{font:900 clamp(52px,12vw,84px)/1 "Zen Old Mincho",serif;margin:8px 0}
+.res .big small{font-size:.4em;color:var(--sub)}
+.res p{color:var(--sub)}
+.miss{list-style:none;padding:0;margin:16px 0;display:grid;gap:6px;text-align:start}
+.miss li{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:var(--soft)}
+.miss li span:last-child{color:var(--shu);white-space:nowrap}
+h2{font:900 22px/1.2 "Zen Old Mincho",serif;margin:0 0 10px}
+.weak{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
+.chip{padding:6px 12px;border-radius:16px;background:var(--paper);border:1px solid var(--line);font-size:15px}
+.chip em{font-style:normal;color:var(--shu);font-size:13px;margin-inline-start:6px}
+.note{font-size:13px;color:var(--sub);margin-top:14px}
+.empty{color:var(--sub)}
+.ghost{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--ai-ink)}
+.pin{min-height:36px;padding:0 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--paper);font-size:14px;display:inline-flex;align-items:center;gap:6px;color:var(--sub)}
+.pin svg{width:16px;height:16px}
+.pin[aria-pressed=true]{border-color:var(--shu);color:var(--shu);font-weight:700}
+.pin[aria-pressed=true] svg{fill:currentColor}
+.qtools{display:flex;justify-content:flex-end;margin:-6px 0 6px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 12px}
+.chip .x{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--sub);font-size:18px;line-height:1}
+.chip .x:hover{background:var(--soft)}
+.miss li{align-items:center}
+.miss .pin{flex:none}
+.pick{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.pick summary{min-height:44px;padding:10px 16px;cursor:pointer;font-weight:700}
+.pick ul{list-style:none;margin:0;padding:0 12px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
+.pick li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:10px;background:var(--soft)}
+.pick li small{color:var(--sub);margin-inline-start:6px}
+.ov{position:fixed;inset:0;background:rgba(8,16,28,.55);display:grid;place-items:center;padding:16px;z-index:10}
+.ov[hidden]{display:none}
+.sheet{background:var(--paper);color:var(--ink);border-radius:16px;width:min(820px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
+.sheetHead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.md{overflow:auto;padding:8px 22px 24px}
+.md h1{font-size:28px;color:var(--ink);margin:16px 0 8px}.md h2{font-size:20px;margin:24px 0 8px}.md h3{font-size:17px;margin:18px 0 6px}
+.md table{border-collapse:collapse;width:100%;font-size:15px;display:block;overflow-x:auto}
+.md th,.md td{border-bottom:1px solid var(--line);padding:6px 10px;text-align:start;vertical-align:top}
+.md th{background:var(--soft)}
+.md code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.md pre{background:var(--soft);padding:12px;border-radius:8px;overflow-x:auto}.md pre code{padding:0}
+.md ol,.md ul{padding-inline-start:1.4em}.md li{margin:2px 0}.md a{color:var(--shu);overflow-wrap:anywhere}
+.md .tw{overflow-x:auto}.md .tw table{display:table}
+.seg button:disabled,.btn:disabled{opacity:.4;cursor:not-allowed}
+.msg{text-align:center;padding:24px 8px;color:var(--sub)}.msg strong{color:var(--ink)}
+.hint{font-size:13px;color:var(--sub);margin:0 0 4px}
+.kj{font:inherit;color:inherit;background:none;border:0;padding:0 1px;margin:0;cursor:pointer;border-bottom:2px dotted var(--shu);border-radius:2px;line-height:1.2}
+.kj:hover{background:color-mix(in srgb,var(--shu) 10%,transparent)}
+.mw{font:600 17px "Zen Old Mincho",serif}
+.ksheet{width:min(760px,100%)}
+.knav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--sub)}
+.knav[hidden]{display:none}
+.knav .btn{min-height:40px;padding:0 12px;white-space:nowrap}
+.sheetHead .btn{white-space:nowrap;flex:none}
+.kbody{overflow:auto;padding:18px 20px 8px}
+.kgrid{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:24px;align-items:start}
+.kbox{aspect-ratio:1;border:2px solid var(--ink);background:var(--paper);position:relative;display:grid;place-items:center}
+.kglyph{font:900 170px/1 "Zen Old Mincho",serif;font-size:min(170px,40vw);position:relative}
+.kbox:has(.kglyph)::before,.kbox:has(.kglyph)::after{content:"";position:absolute;border:0 dashed var(--line)}
+.kbox:has(.kglyph)::before{left:50%;top:0;bottom:0;border-left-width:1px}.kbox:has(.kglyph)::after{top:50%;left:0;right:0;border-top-width:1px}
+.ksvg{width:100%;height:100%;display:block}
+.ksvg .guide line{stroke:var(--line);stroke-width:.5;stroke-dasharray:2 2}
+.ksvg path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ksvg .ghost path{stroke:var(--soft);stroke-width:4}
+.ksvg .ink path{stroke:var(--ink);stroke-width:4}
+.ksvg .nums text{font:600 7px "Zen Kaku Gothic New",sans-serif;fill:var(--shu);opacity:0;transition:opacity .2s}
+.ksvg .nums text.on{opacity:1}
+.kctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.kctl[hidden]{display:none}
+.kctl .btn{min-height:44px;padding:0 14px}
+.kmsg{font-size:14px;color:var(--sub);margin:8px 0 0;min-height:1em}
+.kinfo h3{display:flex;align-items:baseline;gap:12px;margin:0 0 10px}
+.kbig{font:900 44px/1 "Zen Old Mincho",serif}.kcount{color:var(--sub);font-size:15px;font-weight:500}
+.kinfo dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 16px;margin:0 0 16px}
+.kinfo dt{font-size:13px;color:var(--sub);padding-top:4px;white-space:nowrap}
+.kinfo dd{margin:0;font-size:18px}
+.oku{color:var(--sub);opacity:.75}
+.dim{color:var(--sub);font-size:15px}
+.ex{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+.ex li{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.ex b{font:600 19px "Zen Old Mincho",serif}.ex span{font-size:14px;color:var(--sub)}
+.credit{font-size:12px;color:var(--sub);margin:0;padding:8px 20px 14px}.credit a{color:inherit}
+@media(max-width:600px){.opts{grid-template-columns:minmax(0,1fr)}.row{gap:10px}.md{padding:4px 14px 20px}
+.kgrid{grid-template-columns:minmax(0,1fr);gap:16px}.kleft{max-width:280px;width:100%;margin:0 auto}.kbody{padding:14px 14px 4px}}
+</style>
+</head>
+<body>
+<header class="band top">
+  <div class="wrap">
+    <h1>漢字よみ道場</h1>
+    <div class="row">
+      <span class="seg" role="group" aria-label="出題モード">
+        <button id="mKanken" aria-pressed="true">漢字検定</button>
+        <button id="mNandoku" aria-pressed="false">大人の難読漢字</button>
+      </span>
+      <label><span class="lbl">問題数</span>
+        <select id="count"><option value="10">10問</option><option value="5">5問</option><option value="0">全問</option></select>
+      </label>
+      <button class="go" id="startBtn">はじめる</button>
+      <button class="ghost" id="readmeBtn">仕様（README）</button>
+    </div>
+    <div class="row levels" id="levelRow">
+      <span class="lbl">級</span>
+      <span class="seg" role="group" aria-label="級" id="levels"></span>
+    </div>
+  </div>
+</header>
+
+<main class="band">
+  <div class="wrap">
+    <section class="card" id="card" aria-live="polite"></section>
+    <section class="band" style="padding-inline:0">
+      <h2>苦手な漢字</h2>
+      <div id="weakBox"></div>
+      <details class="pick" id="pick"><summary>一覧から追加する</summary><div id="pickList"></div></details>
+      <p class="note" id="dataNote"></p>
+      <p class="note">級の区分は目安です。問題は questions.csv、漢字の読み・使用例は kanji.csv を編集すると増やせます。成績はこの端末のブラウザにだけ保存されます。</p>
+      <p class="note" id="offline"></p>
+    </section>
+  </div>
+</main>
+
+<div class="ov" id="kov" hidden>
+  <div class="sheet ksheet" role="dialog" aria-modal="true" aria-labelledby="kTitle">
+    <div class="sheetHead">
+      <div class="knav" id="kNav"><button class="btn" id="kPrev" aria-label="前の字">‹ 前</button><span id="kPos"></span><button class="btn" id="kNext" aria-label="次の字">次 ›</button></div>
+      <button class="btn" id="kClose">閉じる</button>
+    </div>
+    <div class="kbody" id="kBody"></div>
+    <p class="credit">書き順データ：<a href="https://kanjivg.tagaini.net/" target="_blank" rel="noopener">KanjiVG</a>（Ulrich Apel、CC BY-SA 3.0）</p>
+  </div>
+</div>
+
+<div class="ov" id="ov" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+    <div class="sheetHead"><strong id="ovTitle">README.md</strong><button class="btn" id="ovClose">閉じる</button></div>
+    <div class="md" id="md">読み込み中…</div>
+  </div>
+</div>
+
+<script>
+{
+const LEVELS=[['4','4級'],['3','3級'],['p2','準2級'],['2','2級'],['p1','準1級'],['1','1級']];
+const KUBUN={'4級':'4','3級':'3','準2級':'p2','2級':'2','準1級':'p1','1級':'1','難読':'nandoku'};
+const Q_COLS=['区分','出題語','読み','誤答1','誤答2','誤答3','意味'];
+const Q_NEED=['区分','出題語','読み','誤答1','誤答2','誤答3'];
+let DATA={},ALL=[],WORDS=new Set(),KANJI={},ready=false;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+// Fisher–Yates シャッフル
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const isKanji=c=>/[㐀-䶿一-鿿豈-﫿]/.test(c);
+const reduced=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+
+/* ---------- CSV ---------- */
+function parseCSV(text){
+  text=text.replace(/^﻿/,'');
+  const rows=[];let row=[],f='',q=false,started=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c;continue}
+    if(c==='"'&&f===''){q=true;started=true}
+    else if(c===','){row.push(f);f='';started=true}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';started=false}
+    else{f+=c;started=true}
+  }
+  if(started||row.length){row.push(f);rows.push(row)}
+  return rows;
+}
+function records(text){
+  const rows=parseCSV(text),head=(rows[0]||[]).map(h=>h.trim());
+  return{head,recs:rows.slice(1).map((r,i)=>({line:i+2,blank:r.every(v=>!v.trim()),get:k=>{const j=head.indexOf(k);return j<0?'':(r[j]||'').trim()}}))};
+}
+function buildQuestions(text){
+  const{head,recs}=records(text);
+  const lack=Q_NEED.filter(k=>!head.includes(k));
+  if(lack.length)throw new Error('見出し行に「'+lack.join('」「')+'」の列がありません');
+  const data={};Object.values(KUBUN).forEach(k=>data[k]=[]);
+  const seen=new Set(),skips=[];
+  for(const r of recs){
+    if(r.blank)continue;
+    const v={};Q_COLS.forEach(k=>v[k]=r.get(k));
+    let why='';
+    if(Q_NEED.some(k=>!v[k]))why='必須の列が空';
+    else if(!KUBUN[v['区分']])why='区分が不正（'+v['区分']+'）';
+    else if(seen.has(v['出題語']))why='出題語が重複（'+v['出題語']+'）';
+    else if(new Set([v['読み'],v['誤答1'],v['誤答2'],v['誤答3']]).size<4)why='選択肢が重複';
+    if(why){skips.push(r.line+'行目：'+why);continue}
+    seen.add(v['出題語']);
+    const lv=KUBUN[v['区分']];
+    data[lv].push({w:v['出題語'],r:v['読み'],d:[v['誤答1'],v['誤答2'],v['誤答3']],m:v['意味'],lv});
+  }
+  return{data,skips};
+}
+function buildKanji(text){
+  const{head,recs}=records(text),map={};
+  if(!head.includes('漢字'))return map;
+  const split=s=>s?s.split(/[・、]/).map(x=>x.trim()).filter(Boolean):[];
+  for(const r of recs){
+    const k=r.get('漢字');if(!k||map[k])continue;
+    map[k]={strokes:r.get('画数'),on:split(r.get('音読み')),kun:split(r.get('訓読み')),ex:split(r.get('使用例'))};
+  }
+  return map;
+}
+const fetchText=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r.text()});
+
+/* ---------- 設定・苦手リスト ---------- */
+let cfg=load('kyomi-cfg',{mode:'kanken',level:'4',count:'10'});
+let miss=load('kyomi-miss',{});
+let pin=new Set(load('kyomi-pin',[]));
+let st=null;
+const isWeak=w=>pin.has(w)||!!miss[w];
+const saveWeak=()=>{save('kyomi-miss',miss);save('kyomi-pin',[...pin])};
+const STAR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>';
+const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const pinBtn=(w,short)=>{const on=isWeak(w);return `<button class="pin" data-pin="${esc(w)}" aria-pressed="${on}">${STAR}${short?(on?'苦手':'追加'):(on?'苦手から外す':'苦手に追加')}</button>`};
+function toggleWeak(w){if(isWeak(w)){pin.delete(w);delete miss[w]}else pin.add(w);saveWeak();renderWeak()}
+function refreshPins(){document.querySelectorAll('#card [data-pin]').forEach(b=>{b.outerHTML=pinBtn(b.dataset.pin,!b.closest('.qtools'))})}
+const pool=()=>(cfg.mode==='nandoku'?DATA.nandoku:DATA[cfg.level])||[];
+const levelName=k=>(LEVELS.find(l=>l[0]===k)||['',''])[1];
+function label(){return cfg.mode==='nandoku'?'大人の難読漢字':'漢検 '+levelName(cfg.level)}
+
+/* 出題語の漢字をタップできるボタンにする */
+function kjWord(w){
+  let n=0;
+  return [...w].map(c=>isKanji(c)?`<button class="kj" data-w="${esc(w)}" data-i="${n++}" aria-label="${esc(c)}の詳細を見る">${esc(c)}</button>`:esc(c)).join('');
+}
+
+/* ---------- README ---------- */
+let mdCache=null;
+function openReadme(){
+  $('ov').hidden=false;$('ovClose').focus();
+  if(mdCache!==null)return;
+  fetchText('README.md').then(t=>{mdCache=t;$('md').innerHTML=mdToHtml(t)})
+  .catch(()=>{$('md').textContent='README.md を読み込めませんでした。時間をおいて再度お試しください。'});
+}
+function closeReadme(){$('ov').hidden=true;$('readmeBtn').focus()}
+// 小さなMarkdown変換（見出し・表・箇条書き／番号付き（1段の入れ子）・コード・太字・URL）
+function mdToHtml(src){
+  const inl=s=>esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[\s（(）)])(https?:\/\/[^\s<）)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+  const cells=l=>l.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+  const li=l=>/^(\s*)(-|\d+\.)\s+/.exec(l);
+  const L=src.replace(/\r/g,'').split('\n'),out=[];let i=0;
+  const list=()=>{
+    const m0=li(L[i]),ind=m0[1].length,tag=/\d/.test(m0[2])?'ol':'ul';let h='<'+tag+'>';
+    while(i<L.length){
+      const m=li(L[i]);if(!m||m[1].length<ind)break;
+      if(m[1].length>ind){h=h.replace(/<\/li>$/,'')+list()+'</li>';continue}
+      h+='<li>'+inl(L[i].slice(m[0].length))+'</li>';i++;
+    }
+    return h+'</'+tag+'>';
+  };
+  while(i<L.length){
+    const l=L[i];
+    if(/^```/.test(l)){const buf=[];i++;while(i<L.length&&!/^```/.test(L[i]))buf.push(L[i++]);i++;out.push('<pre><code>'+esc(buf.join('\n'))+'</code></pre>');continue}
+    const h=l.match(/^(#{1,4})\s+(.*)/);
+    if(h){out.push(`<h${h[1].length}>${inl(h[2])}</h${h[1].length}>`);i++;continue}
+    if(/^\s*\|/.test(l)){const rows=[];while(i<L.length&&/^\s*\|/.test(L[i]))rows.push(L[i++]);
+      out.push('<div class="tw"><table><thead><tr>'+cells(rows[0]).map(c=>'<th>'+inl(c)+'</th>').join('')+'</tr></thead><tbody>'+rows.slice(2).map(r=>'<tr>'+cells(r).map(c=>'<td>'+inl(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>');continue}
+    if(li(l)){out.push(list());continue}
+    if(!l.trim()){i++;continue}
+    const p=[];while(i<L.length&&L[i].trim()&&!/^(#|```|\s*\||\s*-\s|\s*\d+\.\s)/.test(L[i]))p.push(L[i++]);
+    out.push('<p>'+inl(p.join(''))+'</p>');
+  }
+  return out.join('');
+}
+
+/* ---------- 出題 ---------- */
+function renderSettings(){
+  $('mKanken').setAttribute('aria-pressed',cfg.mode==='kanken');
+  $('mNandoku').setAttribute('aria-pressed',cfg.mode==='nandoku');
+  $('mNandoku').disabled=ready&&!(DATA.nandoku||[]).length;
+  $('levelRow').hidden=cfg.mode!=='kanken';
+  $('levels').innerHTML=LEVELS.map(([k,n])=>{const c=(DATA[k]||[]).length;return `<button data-lv="${k}" aria-pressed="${cfg.level===k}"${ready&&!c?' disabled title="問題がありません"':''}>${n}</button>`}).join('');
+  $('count').value=cfg.count;
+  save('kyomi-cfg',cfg);renderPick();
+}
+function fixSelection(){
+  if(!(DATA[cfg.level]||[]).length){const f=LEVELS.find(l=>DATA[l[0]].length);if(f)cfg.level=f[0]}
+  if(cfg.mode==='nandoku'&&!DATA.nandoku.length)cfg.mode='kanken';
+  if(cfg.mode==='kanken'&&!LEVELS.some(l=>DATA[l[0]].length)&&DATA.nandoku.length)cfg.mode='nandoku';
+}
+function message(html){st=null;$('card').innerHTML='<div class="msg">'+html+'</div>'}
+function start(items,title){
+  if(!items.length){message('<p>出題できる問題がありません。</p>');return}
+  const n=+cfg.count,list=shuffle(items);
+  st={items:n?list.slice(0,n):list,i:0,score:0,wrong:[],title,answered:false};
+  renderQ();
+}
+function startNormal(){if(ready)start(pool(),label())}
+
+// 選択肢の並び：毎回シャッフルし、同じ問題で正解の位置が前回と同じにならないようにする（アプリを開いている間だけ記憶）
+const lastPos=new Map();
+function arrange(it){
+  const o=shuffle([it.r,...it.d]),p=o.indexOf(it.r),prev=lastPos.get(it.w);
+  if(prev===p){const q=(p+1+Math.floor(Math.random()*3))%4;[o[p],o[q]]=[o[q],o[p]]}
+  lastPos.set(it.w,o.indexOf(it.r));
+  return o;
+}
+const cellsHTML=w=>[...w].map(c=>`<div class="cell"><span>${esc(c)}</span></div>`).join('');
+
+function renderQ(){
+  const it=st.items[st.i],total=st.items.length;
+  st.opts=arrange(it);st.answered=false;
+  $('card').innerHTML=`
+  <div class="meta"><span>${esc(st.title)}</span><span>${st.i+1} / ${total}問・正解 ${st.score}</span></div>
+  <div class="bar"><i style="width:${st.i/total*100}%"></i></div>
+  <div class="qtools">${pinBtn(it.w)}</div>
+  <div class="stage"><div style="position:relative"><div class="cells">${cellsHTML(it.w)}</div>
+    <svg class="maru" id="maru" viewBox="0 0 200 100" preserveAspectRatio="none"><ellipse cx="100" cy="50" rx="94" ry="44" pathLength="1000"/></svg></div></div>
+  <p class="q">この漢字の読みはどれ？</p>
+  <div class="opts">${st.opts.map((o,k)=>`<button class="opt" data-k="${k}"><b>${k+1}</b>${esc(o)}</button>`).join('')}</div>
+  <div class="fb" id="fb"></div>`;
+}
+function answer(k){
+  if(!st||st.answered)return;
+  st.answered=true;
+  const it=st.items[st.i],ok=st.opts[k]===it.r;
+  document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;
+    if(st.opts[j]===it.r)b.classList.add('right');else if(j===k)b.classList.add('wrong')});
+  if(ok){st.score++;$('maru').classList.add('on');if(miss[it.w]){miss[it.w]--;if(miss[it.w]<=0)delete miss[it.w]}}
+  else{st.wrong.push(it);miss[it.w]=(miss[it.w]||0)+1}
+  saveWeak();renderWeak();refreshPins();
+  const last=st.i===st.items.length-1,fb=$('fb');fb.classList.add('show');
+  fb.innerHTML=`<div class="head ${ok?'ok':'ng'}">${ok?'正解！':'おしい！ 正解は「'+esc(it.r)+'」'}</div>
+  <div class="rb"><ruby>${kjWord(it.w)}<rt>${esc(it.r)}</rt></ruby></div>
+  <p class="hint">漢字をタップすると、書き順や読み方を確認できます</p>
+  ${it.m?`<p class="mean">${esc(it.m)}</p>`:''}
+  <div class="acts"><button class="btn" id="say">${SPK}読みを聞く</button>
+  <button class="btn main" id="next">${last?'結果を見る':'次の問題'}</button></div>`;
+  $('next').focus();
+}
+function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function next(){if(st.i<st.items.length-1){st.i++;renderQ()}else renderResult()}
+function renderResult(){
+  const t=st.items.length,p=Math.round(st.score/t*100);
+  const msg=p===100?'全問正解、お見事です。':p>=70?'よくできました。間違えた語を復習しましょう。':'くり返すほど定着します。もう一度挑戦しましょう。';
+  $('card').innerHTML=`<div class="res">
+   <div class="meta"><span>${esc(st.title)}</span><span>結果</span></div>
+   <div class="big">${st.score}<small> / ${t}問</small></div><p>${msg}</p>
+   ${st.wrong.length?`<ul class="miss">${st.wrong.map(w=>`<li><span><span class="mw">${kjWord(w.w)}</span>　<span style="color:var(--shu)">${esc(w.r)}</span></span>${pinBtn(w.w,true)}</li>`).join('')}</ul>`:''}
+   <div class="acts" style="justify-content:center">
+   ${st.wrong.length?'<button class="btn main" id="retryWrong">間違えた問題をもう一度</button>':''}
+   <button class="btn${st.wrong.length?'':' main'}" id="again">同じ設定でもう一度</button></div></div>`;
+}
+function renderPick(){
+  const items=pool();
+  $('pickList').innerHTML=items.length?`<ul>${items.map(it=>`<li><span>${esc(it.w)}<small>${esc(it.r)}</small></span>${pinBtn(it.w,true)}</li>`).join('')}</ul>`:'<p class="empty" style="padding:0 16px 12px">この区分の問題はありません。</p>';
+}
+function renderWeak(){
+  const words=[...new Set([...Object.keys(miss),...pin])].filter(w=>!ready||WORDS.has(w));
+  const list=words.map(w=>[w,miss[w]||0]).sort((a,b)=>b[1]-a[1]);
+  renderPick();
+  $('weakBox').innerHTML=list.length?`<div class="weak">${list.map(([w,c])=>`<span class="chip">${esc(w)}<em>${c?'×'+c:'追加'}</em><button class="x" data-rm="${esc(w)}" aria-label="${esc(w)}を苦手から外す">×</button></span>`).join('')}</div>
+   <div class="acts"><button class="btn main" id="reviewWeak">苦手だけを復習する</button><button class="btn" id="clearWeak">記録を消す</button></div>`
+   :'<p class="empty">間違えた漢字がここにたまります。まだ記録はありません。</p>';
+}
+
+/* ---------- 漢字の詳細ポップアップ ---------- */
+const kvgCache=new Map();
+let ks=null,kOpener=null;
+const hex5=c=>c.codePointAt(0).toString(16).padStart(5,'0');
+function parseKvg(t){
+  const paths=[],nums=[];let m;
+  const rp=/<path\b[^>]*>/g;
+  while((m=rp.exec(t))){
+    const tag=m[0],id=(tag.match(/\bid="([^"]+)"/)||[])[1]||'',d=(tag.match(/\sd="([^"]+)"/)||[])[1],n=+((id.match(/-s(\d+)$/)||[])[1]||0);
+    if(d&&n&&/^[0-9MmCcSsLlHhVvZzQqTtAa,.\-\s]+$/.test(d))paths.push({n,d});
+  }
+  paths.sort((a,b)=>a.n-b.n);
+  const rt=/<text\b[^>]*transform="matrix\(1 0 0 1 ([\d.\-]+) ([\d.\-]+)\)"[^>]*>\s*(\d+)\s*<\/text>/g;
+  while((m=rt.exec(t)))nums[+m[3]]=[+m[1],+m[2]];
+  return paths.length?{paths,nums}:null;
+}
+function loadKvg(c){
+  if(kvgCache.has(c))return kvgCache.get(c);
+  const p=fetchText('kanjivg/'+hex5(c)+'.svg').then(parseKvg).catch(()=>null);
+  kvgCache.set(c,p);p.then(v=>{if(!v)kvgCache.delete(c)});
+  return p;
+}
+function kunHTML(k){const [a,b]=k.split('-');return esc(a)+(b?`<span class="oku">${esc(b)}</span>`:'')}
+function exHTML(e){const m=e.match(/^(.+?)[（(](.+)[）)]$/);return m?`<li><b>${esc(m[1])}</b><span>${esc(m[2])}</span></li>`:`<li><b>${esc(e)}</b></li>`}
+
+function openKanji(word,i,opener){
+  const list=[...word].filter(isKanji);if(!list.length)return;
+  kOpener=opener||null;
+  ks={word,list,i:Math.min(i,list.length-1),strokes:[],step:0,timer:null};
+  $('kov').hidden=false;renderKanji();$('kClose').focus();
+}
+function closeKanji(){stopAnim();$('kov').hidden=true;ks=null;if(kOpener&&document.contains(kOpener))kOpener.focus()}
+function moveKanji(d){if(!ks)return;const n=ks.i+d;if(n<0||n>=ks.list.length)return;ks.i=n;renderKanji()}
+
+function renderKanji(){
+  stopAnim();
+  const c=ks.list[ks.i],info=KANJI[c],multi=ks.list.length>1;
+  $('kNav').hidden=!multi;
+  $('kPos').textContent=`${ks.i+1} / ${ks.list.length}`;
+  $('kPrev').disabled=ks.i===0;$('kNext').disabled=ks.i===ks.list.length-1;
+  const none='<p class="empty">この漢字の情報はまだ登録されていません。</p>';
+  $('kBody').innerHTML=`
+  <div class="kgrid">
+    <div class="kleft">
+      <div class="kbox" id="kBox"><div class="kglyph">${esc(c)}</div></div>
+      <div class="kctl" id="kCtl" hidden>
+        <button class="btn main" id="kPlay">再生</button><button class="btn" id="kStep">1画ずつ</button><button class="btn" id="kReset">最初から</button>
+      </div>
+      <p class="kmsg" id="kMsg">書き順データを読み込み中…</p>
+    </div>
+    <div class="kinfo">
+      <h3 id="kTitle"><span class="kbig">${esc(c)}</span><span class="kcount" id="kCount">${info&&info.strokes?esc(info.strokes)+'画':''}</span></h3>
+      ${info?`<dl>
+        <dt>音読み</dt><dd>${info.on.length?info.on.map(esc).join('・'):'<span class="dim">なし</span>'}</dd>
+        <dt>訓読み</dt><dd>${info.kun.length?info.kun.map(kunHTML).join('・'):'<span class="dim">なし</span>'}</dd>
+        <dt>使用例</dt><dd>${info.ex.length?'<ul class="ex">'+info.ex.map(exHTML).join('')+'</ul>':'<span class="dim">なし</span>'}</dd>
+      </dl>
+      <button class="btn" id="kSay">${SPK}この字を聞く</button>`:none}
+    </div>
+  </div>`;
+  const want=ks.i;
+  loadKvg(c).then(v=>{
+    if(!ks||ks.i!==want||ks.list[ks.i]!==c)return;
+    if(!v){$('kMsg').textContent='書き順データがありません。';return}
+    $('kMsg').textContent='';
+    if(!(info&&info.strokes))$('kCount').textContent=v.paths.length+'画';
+    drawStrokeSvg(v);
+    if(reduced())showAll();else play();
+  });
+}
+function drawStrokeSvg(v){
+  const box=$('kBox');
+  box.innerHTML=`<svg viewBox="0 0 109 109" class="ksvg" aria-label="書き順">
+    <g class="guide"><line x1="54.5" y1="0" x2="54.5" y2="109"/><line x1="0" y1="54.5" x2="109" y2="54.5"/></g>
+    <g class="ghost">${v.paths.map(p=>`<path d="${esc(p.d)}"/>`).join('')}</g>
+    <g class="ink">${v.paths.map(p=>`<path d="${esc(p.d)}"/>`).join('')}</g>
+    <g class="nums">${v.paths.map((p,k)=>{const n=v.nums[k+1];return n?`<text x="${n[0]}" y="${n[1]}">${k+1}</text>`:''}).join('')}</g>
+  </svg>`;
+  const ink=box.querySelectorAll('.ink path'),nums=box.querySelectorAll('.nums text');
+  ks.strokes=[...ink].map((el,k)=>{const len=el.getTotalLength()||1;el.style.strokeDasharray=len;el.style.strokeDashoffset=len;return{el,len,num:nums[k]||null}});
+  ks.step=0;$('kCtl').hidden=false;
+}
+function stopAnim(){if(ks&&ks.timer){clearTimeout(ks.timer);ks.timer=null}}
+function setStroke(s,on,anim){
+  const dur=Math.max(220,Math.min(900,s.len*14));
+  s.el.style.transition=anim?`stroke-dashoffset ${dur}ms linear`:'none';
+  s.el.style.strokeDashoffset=on?0:s.len;
+  if(s.num)s.num.classList.toggle('on',on);
+  return dur;
+}
+function resetStrokes(){stopAnim();ks.strokes.forEach(s=>setStroke(s,false,false));ks.step=0}
+function showAll(){stopAnim();ks.strokes.forEach(s=>setStroke(s,true,false));ks.step=ks.strokes.length}
+function stepOnce(){
+  if(!ks||!ks.strokes.length)return;stopAnim();
+  if(ks.step>=ks.strokes.length)resetStrokes();
+  const s=ks.strokes[ks.step++];
+  if(reduced())setStroke(s,true,false);else{s.el.getBoundingClientRect();setStroke(s,true,true)}
+}
+function play(){
+  if(!ks||!ks.strokes.length)return;
+  resetStrokes();
+  if(reduced()){showAll();return}
+  const run=()=>{
+    if(!ks||ks.step>=ks.strokes.length){if(ks)ks.timer=null;return}
+    const s=ks.strokes[ks.step++];s.el.getBoundingClientRect();
+    const dur=setStroke(s,true,true);ks.timer=setTimeout(run,dur+160);
+  };
+  ks.timer=setTimeout(run,120);
+}
+function sayKanji(){
+  const info=ks&&KANJI[ks.list[ks.i]];if(!info)return;
+  speak([info.on.join('、'),info.kun.map(k=>k.replace('-','')).join('、')].filter(Boolean).join('。'));
+}
+
+/* ---------- イベント ---------- */
+document.addEventListener('click',e=>{
+  if(e.target.id==='ov'){closeReadme();return}
+  if(e.target.id==='kov'){closeKanji();return}
+  const b=e.target.closest('button');if(!b||b.disabled)return;
+  if(b.classList.contains('kj'))openKanji(b.dataset.w,+b.dataset.i,b);
+  else if(b.id==='kClose')closeKanji();
+  else if(b.id==='kPrev')moveKanji(-1);
+  else if(b.id==='kNext')moveKanji(1);
+  else if(b.id==='kPlay')play();
+  else if(b.id==='kStep')stepOnce();
+  else if(b.id==='kReset')resetStrokes();
+  else if(b.id==='kSay')sayKanji();
+  else if(b.id==='mKanken'||b.id==='mNandoku'){cfg.mode=b.id==='mKanken'?'kanken':'nandoku';renderSettings();startNormal()}
+  else if(b.dataset.lv){cfg.level=b.dataset.lv;renderSettings();startNormal()}
+  else if(b.id==='startBtn'||b.id==='again')startNormal();
+  else if(b.classList.contains('opt'))answer(+b.dataset.k);
+  else if(b.id==='next')next();
+  else if(b.id==='say')speak(st.items[st.i].r);
+  else if(b.id==='retryWrong')start(st.wrong,'間違えた問題');
+  else if(b.dataset.pin!==undefined){toggleWeak(b.dataset.pin);refreshPins()}
+  else if(b.dataset.rm!==undefined){pin.delete(b.dataset.rm);delete miss[b.dataset.rm];saveWeak();renderWeak();refreshPins()}
+  else if(b.id==='reviewWeak'){const ws=ALL.filter(it=>isWeak(it.w));if(ws.length)start(ws,'苦手の復習')}
+  else if(b.id==='clearWeak'){miss={};pin.clear();saveWeak();renderWeak();refreshPins()}
+  else if(b.id==='readmeBtn')openReadme();
+  else if(b.id==='ovClose')closeReadme();
+});
+$('count').addEventListener('change',e=>{cfg.count=e.target.value;save('kyomi-cfg',cfg)});
+document.addEventListener('keydown',e=>{
+  if(!$('kov').hidden){
+    if(e.key==='Escape')closeKanji();
+    else if(e.key==='ArrowLeft')moveKanji(-1);
+    else if(e.key==='ArrowRight')moveKanji(1);
+    return;
+  }
+  if(!$('ov').hidden){if(e.key==='Escape')closeReadme();return}
+  if(!st||e.target.tagName==='SELECT')return;
+  if(!st.answered&&/^[1-4]$/.test(e.key)&&$('fb'))answer(+e.key-1);
+  else if(st.answered&&e.key==='Enter'&&$('next')&&document.activeElement===document.body){e.preventDefault();next()}
+});
+
+/* ---------- 起動 ---------- */
+async function init(){
+  message('<p>問題データを読み込み中…</p>');
+  const[qt,kt]=await Promise.all([fetchText('questions.csv').catch(()=>null),fetchText('kanji.csv').catch(()=>null)]);
+  const notes=[];
+  if(kt!==null){try{KANJI=buildKanji(kt)}catch(e){KANJI={}}}
+  else notes.push('漢字データ（kanji.csv）を読み込めませんでした。詳細ポップアップの読み・使用例は表示されません。');
+  if(qt===null){message('<p><strong>問題データを読み込めませんでした。</strong></p><p>questions.csv が index.html と同じフォルダにあるか確認してください。</p>');$('dataNote').textContent=notes.join(' ');return}
+  let res;
+  try{res=buildQuestions(qt)}catch(e){message('<p><strong>問題データを読み込めませんでした。</strong></p><p>'+esc(e.message)+'</p>');return}
+  DATA=res.data;ALL=Object.values(DATA).flat();WORDS=new Set(ALL.map(x=>x.w));ready=true;
+  const cnt=LEVELS.map(([k,n])=>n+' '+DATA[k].length+'問').join('・')+'、難読 '+DATA.nandoku.length+'問';
+  notes.unshift('収録：'+cnt+'（questions.csv）。');
+  if(res.skips.length)notes.push('questions.csv の '+res.skips.length+'行をスキップしました（'+res.skips.join('、')+'）。');
+  $('dataNote').textContent=notes.join(' ');
+  if(!ALL.length){message('<p>出題できる問題がありません。questions.csv を確認してください。</p>');return}
+  fixSelection();renderSettings();renderWeak();startNormal();
+}
+renderSettings();renderWeak();init();
+
+// オフライン対応（Service Worker）
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  try{
+    navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{
+      $('offline').textContent='オフライン準備完了：一度開いたこの端末では、電波がなくても使えます。';
+    }).catch(()=>{});
+  }catch(e){}
+}
+}
+</script>
+</body>
+</html>
