@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>漢字よみ道場</title>
+<title>漢字読み道場</title>
 <meta name="theme-color" content="#1f3a5f">
 <meta name="description" content="漢字検定（4級〜1級）と大人の難読漢字の読みを4択で学ぶアプリ">
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="漢字よみ道場">
+<meta name="apple-mobile-web-app-title" content="漢字読み道場">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;900&display=swap" rel="stylesheet">
 <style>
@@ -19,7 +19,7 @@
    IDEA: 漢字練習帳のマス目と、先生の朱色の花まる
    PICTURE: マス目に書かれた出題語そのもの。正解で朱の丸が描かれる
    COLOUR and TYPE: 藍の帯・白い紙・朱のアクセント / Zen Old Mincho + Zen Kaku Gothic New
-   LAYOUT: 上に設定帯、中央に問題カード、下に苦手リスト。スマホは縦一列 */
+   LAYOUT: 上にタイトルと「出題」「設定」タブ。出題タブは問題カードと苦手リスト、設定タブは設定カード。スマホは縦一列 */
 :root{color-scheme:light dark;
 --bg:light-dark(#f3f5f8,#0d1622);--paper:light-dark(#ffffff,#152233);--ink:light-dark(#18202b,#e9eef5);
 --sub:light-dark(#5a6575,#9fb0c4);--line:light-dark(#d5dce6,#2a3b52);--ai:light-dark(#1f3a5f,#0a1320);
@@ -36,13 +36,22 @@ button{cursor:pointer}
 h1{font:900 clamp(28px,5vw,40px)/1.05 "Zen Old Mincho",serif;margin:0 0 14px;letter-spacing:.04em}
 .row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
 .lbl{font-size:13px;opacity:.8;margin-inline-end:4px}
+.top{padding-bottom:0}
+.tabs{display:flex;gap:4px}
+.tabs button{min-height:48px;padding:0 26px;border:0;border-radius:12px 12px 0 0;background:transparent;color:var(--ai-ink);opacity:.75;font-weight:700;font-size:17px}
+.tabs button:hover{opacity:1}
+.tabs button[aria-selected=true]{background:var(--bg);color:var(--ink);opacity:1}
 .seg{display:inline-flex;flex-wrap:wrap;gap:6px}
-.seg button{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--ai-ink)}
-.seg button[aria-pressed=true]{background:var(--ai-ink);color:#1f3a5f;border-color:var(--ai-ink);font-weight:700}
-.top select{min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--ai-ink);font-size:16px}
-.top select option{color:#18202b}
+.seg button{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ai);color:var(--ai-ink);border-color:var(--ai);font-weight:700}
+.seg button:disabled{opacity:.4;cursor:default}
+.settings select{min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);font-size:16px}
 .go{min-height:44px;padding:0 22px;border-radius:22px;border:0;background:var(--shu);color:#fff;font-weight:700}
-.levels{margin-top:12px}
+.cur{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px;margin-bottom:14px}
+.cur span{font-weight:700;font-size:17px}
+.settings{display:grid;gap:22px}
+.settings h2{margin:0}
+.settings .lbl{display:block;font-size:14px;font-weight:700;opacity:1;color:var(--sub);margin:0 0 8px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,3vw,32px);box-shadow:0 10px 30px -18px rgba(20,40,70,.35)}
 .meta{display:flex;justify-content:space-between;gap:12px;color:var(--sub);font-size:14px;margin-bottom:6px}
 .bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin-bottom:22px}
@@ -88,20 +97,13 @@ font:900 calc(var(--s)*.68)/1 "Zen Old Mincho",serif;border-inline-start:1px sol
 .miss li{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:10px;background:var(--soft)}
 .miss li span:last-child{color:var(--shu);white-space:nowrap}
 h2{font:900 22px/1.2 "Zen Old Mincho",serif;margin:0 0 10px}
-.weak{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
-.chip{padding:6px 12px;border-radius:16px;background:var(--paper);border:1px solid var(--line);font-size:15px}
-.chip em{font-style:normal;color:var(--shu);font-size:13px;margin-inline-start:6px}
 .note{font-size:13px;color:var(--sub);margin-top:14px}
 .empty{color:var(--sub)}
-.ghost{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--ai-ink)}
 .pin{min-height:36px;padding:0 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--paper);font-size:14px;display:inline-flex;align-items:center;gap:6px;color:var(--sub)}
 .pin svg{width:16px;height:16px}
 .pin[aria-pressed=true]{border-color:var(--shu);color:var(--shu);font-weight:700}
 .pin[aria-pressed=true] svg{fill:currentColor}
 .qtools{display:flex;justify-content:flex-end;margin:-6px 0 6px}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 12px}
-.chip .x{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--sub);font-size:18px;line-height:1}
-.chip .x:hover{background:var(--soft)}
 .miss li{align-items:center}
 .miss .pin{flex:none}
 .pick{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
@@ -109,6 +111,10 @@ h2{font:900 22px/1.2 "Zen Old Mincho",serif;margin:0 0 10px}
 .pick ul{list-style:none;margin:0;padding:0 12px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
 .pick li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:10px;background:var(--soft)}
 .pick li small{color:var(--sub);margin-inline-start:6px}
+.pick li em{font-style:normal;color:var(--shu);font-size:13px;margin-inline-start:6px;white-space:nowrap}
+.pick .pin{flex:none}
+.pick .empty{padding:0 16px 12px;margin:0}
+.pick .acts{padding:0 12px 14px}
 .ov{position:fixed;inset:0;background:rgba(8,16,28,.55);display:grid;place-items:center;padding:16px;z-index:10}
 .ov[hidden]{display:none}
 .sheet{background:var(--paper);color:var(--ink);border-radius:16px;width:min(820px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden}
@@ -166,36 +172,59 @@ h2{font:900 22px/1.2 "Zen Old Mincho",serif;margin:0 0 10px}
 <body>
 <header class="band top">
   <div class="wrap">
-    <h1>漢字よみ道場</h1>
-    <div class="row">
-      <span class="seg" role="group" aria-label="出題モード">
-        <button id="mKanken" aria-pressed="true">漢字検定</button>
-        <button id="mNandoku" aria-pressed="false">大人の難読漢字</button>
-      </span>
-      <label><span class="lbl">問題数</span>
-        <select id="count"><option value="10">10問</option><option value="5">5問</option><option value="0">全問</option></select>
-      </label>
-      <button class="go" id="startBtn">はじめる</button>
-      <button class="ghost" id="readmeBtn">仕様（README）</button>
-    </div>
-    <div class="row levels" id="levelRow">
-      <span class="lbl">級</span>
-      <span class="seg" role="group" aria-label="級" id="levels"></span>
+    <h1>漢字読み道場</h1>
+    <div class="tabs" role="tablist" aria-label="画面の切り替え">
+      <button role="tab" id="tabQuiz" aria-controls="viewQuiz" aria-selected="true">出題</button>
+      <button role="tab" id="tabSet" aria-controls="viewSet" aria-selected="false" tabindex="-1">設定</button>
     </div>
   </div>
 </header>
 
 <main class="band">
   <div class="wrap">
-    <section class="card" id="card" aria-live="polite"></section>
-    <section class="band" style="padding-inline:0">
-      <h2>苦手な漢字</h2>
-      <div id="weakBox"></div>
-      <details class="pick" id="pick"><summary>一覧から追加する</summary><div id="pickList"></div></details>
-      <p class="note" id="dataNote"></p>
-      <p class="note">級の区分は目安です。問題は questions.csv、漢字の読み・使用例は kanji.csv を編集すると増やせます。成績はこの端末のブラウザにだけ保存されます。</p>
-      <p class="note" id="offline"></p>
-    </section>
+    <div id="viewQuiz" role="tabpanel" aria-labelledby="tabQuiz">
+      <div class="cur"><span id="curLabel"></span><button class="go" id="startBtn">はじめる</button></div>
+      <section class="card" id="card" aria-live="polite"></section>
+      <section class="band" style="padding-inline:0">
+        <details class="pick" id="weak"><summary>苦手な漢字<span id="weakCount"></span></summary><div id="weakBox"></div></details>
+        <details class="pick" id="pick"><summary>一覧から追加する</summary><div id="pickList"></div></details>
+        <p class="note" id="dataNote"></p>
+        <p class="note">級の区分は目安です。問題は questions.csv、漢字の読み・使用例は kanji.csv を編集すると増やせます。成績はこの端末のブラウザにだけ保存されます。</p>
+        <p class="note" id="offline"></p>
+      </section>
+    </div>
+    <div id="viewSet" role="tabpanel" aria-labelledby="tabSet" hidden>
+      <section class="card settings">
+        <h2>設定</h2>
+        <div>
+          <span class="lbl">出題モード</span>
+          <span class="seg" role="group" aria-label="出題モード">
+            <button id="mKanken" aria-pressed="true">漢字検定</button>
+            <button id="mNandoku" aria-pressed="false">大人の難読漢字</button>
+          </span>
+        </div>
+        <div id="levelRow">
+          <span class="lbl">級</span>
+          <span class="seg" role="group" aria-label="級" id="levels"></span>
+        </div>
+        <div>
+          <label for="count" class="lbl">問題数</label>
+          <select id="count"><option value="10">10問</option><option value="5">5問</option><option value="0">全問</option></select>
+        </div>
+        <div>
+          <span class="lbl">効果音</span>
+          <span class="seg" role="group" aria-label="効果音">
+            <button id="sOn" aria-pressed="true">オン</button>
+            <button id="sOff" aria-pressed="false">オフ</button>
+          </span>
+        </div>
+        <div>
+          <span class="lbl">このアプリについて</span>
+          <button class="btn" id="readmeBtn">仕様（README）</button>
+        </div>
+        <p class="note" style="margin:0">設定は変更すると保存されます。「出題」タブに戻ると、新しい設定で出題を始めます。</p>
+      </section>
+    </div>
   </div>
 </main>
 
@@ -223,7 +252,7 @@ const LEVELS=[['4','4級'],['3','3級'],['p2','準2級'],['2','2級'],['p1','準
 const KUBUN={'4級':'4','3級':'3','準2級':'p2','2級':'2','準1級':'p1','1級':'1','難読':'nandoku'};
 const Q_COLS=['区分','出題語','読み','誤答1','誤答2','誤答3','意味'];
 const Q_NEED=['区分','出題語','読み','誤答1','誤答2','誤答3'];
-let DATA={},ALL=[],WORDS=new Set(),KANJI={},ready=false;
+let DATA={},ALL=[],WORDS=new Set(),WMAP=new Map(),KANJI={},ready=false;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -288,7 +317,23 @@ const fetchText=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r
 
 /* ---------- 設定・苦手リスト ---------- */
 let cfg=load('kyomi-cfg',{mode:'kanken',level:'4',count:'10'});
+const soundOn=()=>cfg.sound!==false; // v3以前の設定には sound がないので、未設定はオン扱い
 let miss=load('kyomi-miss',{});
+
+/* ---------- 効果音 ---------- */
+// 起動時に読み込んでおき、回答してすぐ鳴らす。fetch で丸ごと取得して blob にするのは、
+// オフライン時（Service Worker経由）にも iPhone などで確実に再生できるようにするため
+const SFX={ok:new Audio(),ng:new Audio()};
+[['ok','sound/quiz-correct_pinpon.mp3'],['ng','sound/quiz-wrong_buzzer.mp3']].forEach(([k,u])=>{
+  SFX[k].preload='auto';
+  fetch(u).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{SFX[k].src=URL.createObjectURL(b)}).catch(()=>{SFX[k].src=u});
+});
+function stopSfx(){Object.values(SFX).forEach(a=>{try{a.pause();a.currentTime=0}catch(e){}})}
+function playSfx(k){
+  if(!soundOn())return;
+  stopSfx();
+  try{const p=SFX[k].play();if(p&&p.catch)p.catch(()=>{})}catch(e){} // 鳴らせない時は音なしで続ける
+}
 let pin=new Set(load('kyomi-pin',[]));
 let st=null;
 const isWeak=w=>pin.has(w)||!!miss[w];
@@ -356,7 +401,19 @@ function renderSettings(){
   $('levelRow').hidden=cfg.mode!=='kanken';
   $('levels').innerHTML=LEVELS.map(([k,n])=>{const c=(DATA[k]||[]).length;return `<button data-lv="${k}" aria-pressed="${cfg.level===k}"${ready&&!c?' disabled title="問題がありません"':''}>${n}</button>`}).join('');
   $('count').value=cfg.count;
+  $('sOn').setAttribute('aria-pressed',soundOn());$('sOff').setAttribute('aria-pressed',!soundOn());
+  $('curLabel').textContent=label()+'・'+(cfg.count==='0'?'全問':cfg.count+'問');
   save('kyomi-cfg',cfg);renderPick();
+}
+// 前回出題した時の設定（変わっていれば「出題」タブに戻った時に出題し直す）
+const cfgSig=()=>[cfg.mode,cfg.mode==='kanken'?cfg.level:'',cfg.count].join('|');
+let lastSig=null;
+function showTab(name){
+  const quiz=name==='quiz';
+  $('tabQuiz').setAttribute('aria-selected',quiz);$('tabSet').setAttribute('aria-selected',!quiz);
+  $('tabQuiz').tabIndex=quiz?0:-1;$('tabSet').tabIndex=quiz?-1:0;
+  $('viewQuiz').hidden=!quiz;$('viewSet').hidden=quiz;
+  if(quiz&&ready&&cfgSig()!==lastSig)startNormal();
 }
 function fixSelection(){
   if(!(DATA[cfg.level]||[]).length){const f=LEVELS.find(l=>DATA[l[0]].length);if(f)cfg.level=f[0]}
@@ -365,6 +422,7 @@ function fixSelection(){
 }
 function message(html){st=null;$('card').innerHTML='<div class="msg">'+html+'</div>'}
 function start(items,title){
+  lastSig=cfgSig();
   if(!items.length){message('<p>出題できる問題がありません。</p>');return}
   const n=+cfg.count,list=shuffle(items);
   st={items:n?list.slice(0,n):list,i:0,score:0,wrong:[],title,answered:false};
@@ -399,6 +457,7 @@ function answer(k){
   if(!st||st.answered)return;
   st.answered=true;
   const it=st.items[st.i],ok=st.opts[k]===it.r;
+  playSfx(ok?'ok':'ng');
   document.querySelectorAll('.opt').forEach((b,j)=>{b.disabled=true;
     if(st.opts[j]===it.r)b.classList.add('right');else if(j===k)b.classList.add('wrong')});
   if(ok){st.score++;$('maru').classList.add('on');if(miss[it.w]){miss[it.w]--;if(miss[it.w]<=0)delete miss[it.w]}}
@@ -413,7 +472,7 @@ function answer(k){
   <button class="btn main" id="next">${last?'結果を見る':'次の問題'}</button></div>`;
   $('next').focus();
 }
-function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function speak(t){stopSfx();try{const u=new SpeechSynthesisUtterance(t);u.lang='ja-JP';u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 function next(){if(st.i<st.items.length-1){st.i++;renderQ()}else renderResult()}
 function renderResult(){
   const t=st.items.length,p=Math.round(st.score/t*100);
@@ -432,9 +491,12 @@ function renderPick(){
 }
 function renderWeak(){
   const words=[...new Set([...Object.keys(miss),...pin])].filter(w=>!ready||WORDS.has(w));
+  // 間違えた回数の多い順。手動登録だけの語（回数0）はその後ろ
   const list=words.map(w=>[w,miss[w]||0]).sort((a,b)=>b[1]-a[1]);
   renderPick();
-  $('weakBox').innerHTML=list.length?`<div class="weak">${list.map(([w,c])=>`<span class="chip">${esc(w)}<em>${c?'×'+c:'追加'}</em><button class="x" data-rm="${esc(w)}" aria-label="${esc(w)}を苦手から外す">×</button></span>`).join('')}</div>
+  $('weakCount').textContent='（'+list.length+'語）';
+  $('weakBox').innerHTML=list.length?`<ul>${list.map(([w,c])=>{const it=WMAP.get(w);
+    return `<li><span>${esc(w)}${it?`<small>${esc(it.r)}</small>`:''}<em>${c?'×'+c:'追加'}</em></span><button class="pin" data-rm="${esc(w)}" aria-pressed="true" aria-label="${esc(w)}を苦手から外す">${STAR}苦手から外す</button></li>`}).join('')}</ul>
    <div class="acts"><button class="btn main" id="reviewWeak">苦手だけを復習する</button><button class="btn" id="clearWeak">記録を消す</button></div>`
    :'<p class="empty">間違えた漢字がここにたまります。まだ記録はありません。</p>';
 }
@@ -566,8 +628,11 @@ document.addEventListener('click',e=>{
   else if(b.id==='kStep')stepOnce();
   else if(b.id==='kReset')resetStrokes();
   else if(b.id==='kSay')sayKanji();
-  else if(b.id==='mKanken'||b.id==='mNandoku'){cfg.mode=b.id==='mKanken'?'kanken':'nandoku';renderSettings();startNormal()}
-  else if(b.dataset.lv){cfg.level=b.dataset.lv;renderSettings();startNormal()}
+  else if(b.id==='tabQuiz')showTab('quiz');
+  else if(b.id==='tabSet')showTab('set');
+  else if(b.id==='mKanken'||b.id==='mNandoku'){cfg.mode=b.id==='mKanken'?'kanken':'nandoku';renderSettings()}
+  else if(b.dataset.lv){cfg.level=b.dataset.lv;renderSettings()}
+  else if(b.id==='sOn'||b.id==='sOff'){cfg.sound=b.id==='sOn';if(!cfg.sound)stopSfx();renderSettings()}
   else if(b.id==='startBtn'||b.id==='again')startNormal();
   else if(b.classList.contains('opt'))answer(+b.dataset.k);
   else if(b.id==='next')next();
@@ -580,7 +645,13 @@ document.addEventListener('click',e=>{
   else if(b.id==='readmeBtn')openReadme();
   else if(b.id==='ovClose')closeReadme();
 });
-$('count').addEventListener('change',e=>{cfg.count=e.target.value;save('kyomi-cfg',cfg)});
+$('count').addEventListener('change',e=>{cfg.count=e.target.value;renderSettings()});
+// タブ上で ← → キーを押すと切り替え
+$('tabQuiz').parentNode.addEventListener('keydown',e=>{
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  e.preventDefault();e.stopPropagation();
+  const toSet=$('viewSet').hidden;showTab(toSet?'set':'quiz');$(toSet?'tabSet':'tabQuiz').focus();
+});
 document.addEventListener('keydown',e=>{
   if(!$('kov').hidden){
     if(e.key==='Escape')closeKanji();
@@ -589,7 +660,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(!$('ov').hidden){if(e.key==='Escape')closeReadme();return}
-  if(!st||e.target.tagName==='SELECT')return;
+  if(!st||e.target.tagName==='SELECT'||$('viewQuiz').hidden)return;
   if(!st.answered&&/^[1-4]$/.test(e.key)&&$('fb'))answer(+e.key-1);
   else if(st.answered&&e.key==='Enter'&&$('next')&&document.activeElement===document.body){e.preventDefault();next()}
 });
@@ -604,7 +675,7 @@ async function init(){
   if(qt===null){message('<p><strong>問題データを読み込めませんでした。</strong></p><p>questions.csv が index.html と同じフォルダにあるか確認してください。</p>');$('dataNote').textContent=notes.join(' ');return}
   let res;
   try{res=buildQuestions(qt)}catch(e){message('<p><strong>問題データを読み込めませんでした。</strong></p><p>'+esc(e.message)+'</p>');return}
-  DATA=res.data;ALL=Object.values(DATA).flat();WORDS=new Set(ALL.map(x=>x.w));ready=true;
+  DATA=res.data;ALL=Object.values(DATA).flat();WORDS=new Set(ALL.map(x=>x.w));WMAP=new Map(ALL.map(x=>[x.w,x]));ready=true;
   const cnt=LEVELS.map(([k,n])=>n+' '+DATA[k].length+'問').join('・')+'、難読 '+DATA.nandoku.length+'問';
   notes.unshift('収録：'+cnt+'（questions.csv）。');
   if(res.skips.length)notes.push('questions.csv の '+res.skips.length+'行をスキップしました（'+res.skips.join('、')+'）。');

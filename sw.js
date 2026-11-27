@@ -1,6 +1,6 @@
-// 漢字よみ道場 Service Worker
+// 漢字読み道場 Service Worker
 // アプリを更新したら VERSION の数字を上げてください（古いキャッシュが自動で削除されます）
-const VERSION = 'v2';
+const VERSION = 'v4';
 const CACHE = 'kanji-yomi-' + VERSION;
 const FONT_CACHE = 'kanji-yomi-fonts';
 const KVG_CACHE = 'kanji-yomi-kanjivg';
@@ -14,7 +14,9 @@ const APP_FILES = [
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './sound/quiz-correct_pinpon.mp3',
+  './sound/quiz-wrong_buzzer.mp3'
 ];
 const KEEP = [CACHE, FONT_CACHE, KVG_CACHE];
 

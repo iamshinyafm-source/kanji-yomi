@@ -1,6 +1,6 @@
 {
-  "name": "漢字よみ道場",
-  "short_name": "漢字よみ",
+  "name": "漢字読み道場",
+  "short_name": "漢字読み",
   "description": "漢字検定（4級〜1級）と大人の難読漢字の読みを4択で学ぶアプリ",
   "lang": "ja",
   "start_url": "./",
